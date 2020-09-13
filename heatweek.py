@@ -17,6 +17,21 @@ def get_time_index(time, bin_width=15.0):
     return minutes / bin_width
 
 
+# Filters dataframe of parsed entries 
+# Keeps (or rejects) all rows with `colname` matching `keys` 
+def filter_entries(entries, colname, keys, keep_keys=True):
+
+    if keep_keys:
+        indices = np.isin(entries[colname], keys)
+        filtered = entries[indices]
+
+    else:
+        indices = np.isin(entries[colname], keys, invert=True)
+        filtered = entries[indices]
+
+    return filtered
+
+
 # Add one time entry to the week (2D-) histogram
 def add_entry_to_week(week, start, end, bin_width=15.0):
 
@@ -63,6 +78,7 @@ def add_entry_to_week(week, start, end, bin_width=15.0):
 
     return week
 
+
 # Visualization of weekly activity
 #!# Currently assumes time bins of 15 min
 def plot_week(week, save_plot=False):
@@ -91,7 +107,7 @@ def plot_week(week, save_plot=False):
     else:
         plt.show()
 
-# Read in tables of time entries
+# Read in tables of Toggl time entries
 entries_raw = pd.read_csv(
     "Toggl_time_entries_2020-01-01_to_2020-12-31.csv",
     parse_dates=[["Start date", "Start time"], ["End date", "End time"]],
@@ -108,13 +124,36 @@ entries = entries_raw.append(entries_raw2)
 
 #!# Could make resolution of final chart a user-defined variable?
 #!# Would need to check that it divides well into 24 hours, and move to more granular underlying histogram
-week_bins = np.zeros((96, 7))
+week = np.zeros((96, 7))
 
-for index, row in entries_raw.iterrows():
+for index, row in entries.iterrows():
 
     #!# Could add condition based on Project, Tags, etc
-    week_bins = add_entry_to_week(
-        week_bins, row["Start date_Start time"], row["End date_End time"]
+    week = add_entry_to_week(
+        week, row["Start date_Start time"], row["End date_End time"]
     )  #!# Ugly names
 
-plot_week(week_bins, save_plot='test_plot_0.png')
+plot_week(week, save_plot='test_plot_0.png')
+
+
+# Filtering dataframe based on project name
+# Here I'm picking out all of my work-related projects 
+# Other useful rows could be client or tags
+keys = ["Department service / volunteering",
+        "Meetings", "Online courses", "Other work",
+        "Productivity", "Professional development",
+        "Projects", "Research", "TAing", "Talks and seminars",
+        "Thesis"]
+
+work_entries = filter_entries(entries, "Project", keys)
+
+work_week = np.zeros((96, 7))
+
+for index, row in work_entries.iterrows():
+
+    #!# Could add condition based on Project, Tags, etc
+    work_week = add_entry_to_week(
+        work_week, row["Start date_Start time"], row["End date_End time"]
+    )  #!# Ugly names
+
+plot_week(work_week, save_plot='test_plot_1.png')
