@@ -49,7 +49,30 @@ def filter_entries(entries, colname, keys, keep_keys=True):
 
 
 # Filters dataframe of parsed entries based on date
-#!# def filter_entries_bydate(entries, start_date, end_date):
+# start_date and end_date can either be strings, datetime, or timestamp
+def filter_entries_bydate(entries, start_date=None, end_date=None):
+
+    if start_date is not None and end_date is not None:
+        indices = (
+            entries["Start date_Start time"]
+            >= start_date & entries["End date_End time"]
+            < end_date
+        )
+        filtered = entries[indices]
+
+    elif start_date is not None:
+        indices = entries["Start date_Start time"] >= start_date
+        filtered = entries[indices]
+
+    elif end_date is not None:
+        indices = entries["End date_End time"] < end_date
+        filtered = entries[indices]
+
+    else:
+        print("No start or end date specified; did not filter time entries.")
+        filtered = entries
+
+    return filtered
 
 
 # Add one time entry to the week (2D-) histogram
@@ -154,6 +177,3 @@ def plot_week(week, save_plot=False):
 
     else:
         plt.show()
-
-
-
